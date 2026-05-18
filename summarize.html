@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}Summarise Notes{% endblock %}
+{% block page_title %}Summarise Notes{% endblock %}
+{% block page_subtitle %}Paste a chunk of text and get just the key points — saves a lot of re-reading{% endblock %}
+
+{% block content %}
+<div class="two-col-equal">
+
+  <!-- Input -->
+  <div class="card">
+    <h3 class="form-header"><i class="fas fa-pen-to-square"></i> Paste your text</h3>
+    <div class="form-group">
+      <label>Paste text, notes, or textbook content</label>
+      <textarea id="noteText" rows="13" placeholder="Paste notes, a textbook paragraph, a PDF chunk, anything..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Summary Style</label>
+      <div class="style-pills">
+        <button class="style-pill active" onclick="setStyle(this,'bullet')">
+          <i class="fas fa-list"></i> Bullet Points
+        </button>
+        <button class="style-pill" onclick="setStyle(this,'paragraph')">
+          <i class="fas fa-paragraph"></i> Paragraph
+        </button>
+        <button class="style-pill" onclick="setStyle(this,'structured')">
+          <i class="fas fa-sitemap"></i> Structured
+        </button>
+      </div>
+    </div>
+    <button class="btn btn-primary w-full" id="summarizeBtn" onclick="summarize()">
+      <i class="fas fa-wand-magic-sparkles"></i> Summarise
+    </button>
+  </div>
+
+  <!-- Output -->
+  <div class="card result-panel" id="resultPanel">
+    <div class="empty-state">
+      <i class="fas fa-file-lines empty-icon"></i>
+      <p>Paste something on the left and click <strong>Summarise</strong>.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStyle = 'bullet';
+
+function setStyle(el, style) {
+  document.querySelectorAll('.style-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  currentStyle = style;
+}
+
+async function summarize() {
+  const text = document.getElementById('noteText').value.trim();
+  const btn  = document.getElementById('summarizeBtn');
+  if (!text)         { showToast('Please paste some text first', 'error'); return; }
+  if (text.length < 50) { showToast('Text is too short to summarize', 'error'); return; }
+
+  setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i> Reading through it…');
+  document.getElementById('resultPanel').innerHTML =
+    '<div class="loading-state"><div class="big-spinner"></div><p>Going through the text...</p></div>';
+
+  try {
+    const res  = await fetch('/api/summarize', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, style: currentStyle, grade: getGrade() })
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+
+    const words    = text.split(/\s+/).length;
+    const sumWords = data.summary.split(/\s+/).length;
+    const pct      = Math.max(0, Math.round((1 - sumWords / words) * 100));
+
+    document.getElementById('resultPanel').innerHTML = `
+      <div class="result-header">
+        <h3><i class="fas fa-sparkles"></i> Summary</h3>
+        <div class="result-meta">
+          <span class="meta-badge"><i class="fas fa-compress"></i> ${pct}% shorter</span>
+          <button class="btn-icon" onclick="copyText()" title="Copy to clipboard"><i class="fas fa-copy"></i> Copy</button>
+        </div>
+      </div>
+      <div class="summary-content" id="summaryContent">${mdToHtml(data.summary)}</div>`;
+  } catch {
+    showToast('Failed to summarize. Try again.', 'error');
+  }
+  setLoading(btn, false, '<i class="fas fa-wand-magic-sparkles"></i> Summarise');
+}
+
+function copyText() {
+  const text = document.getElementById('summaryContent').innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!', 'success'));
+}
+</script>
+{% endblock %}

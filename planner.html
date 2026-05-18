@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% block title %}Study Planner{% endblock %}
+{% block page_title %}Study Planner{% endblock %}
+{% block page_subtitle %}Add your subjects and a deadline — it'll split the work into a daily plan{% endblock %}
+
+{% block content %}
+<div class="two-col-layout">
+
+  <!-- Config Sidebar -->
+  <div class="card form-sidebar">
+    <h3 class="form-header"><i class="fas fa-sliders"></i> Your details</h3>
+
+    <div class="form-group">
+      <label>Subjects to Study</label>
+      <div class="tag-input-container" id="tagContainer" onclick="document.getElementById('tagInput').focus()">
+        <input type="text" class="tag-input" id="tagInput" placeholder="Subject name, then hit Enter">
+      </div>
+      <p class="helper-text"><i class="fas fa-circle-info"></i> Press Enter after each subject (max 8)</p>
+    </div>
+
+    <div class="form-group">
+      <label>Target Date (Exam / Deadline)</label>
+      <input type="date" id="examDate">
+    </div>
+
+    <div class="form-group">
+      <label>Study Hours Per Day &nbsp;<strong id="hoursLabel">4</strong> hrs</label>
+      <input type="range" id="hoursSlider" min="1" max="10" value="4" class="range-slider"
+             oninput="document.getElementById('hoursLabel').textContent=this.value">
+      <div class="range-labels"><span>1 hr</span><span>10 hrs</span></div>
+    </div>
+
+    <button class="btn btn-primary w-full" id="planBtn" onclick="generatePlan()">
+      <i class="fas fa-calendar-plus"></i> Make Plan
+    </button>
+  </div>
+
+  <!-- Schedule Area -->
+  <div id="planArea">
+    <div class="empty-state">
+      <i class="fas fa-calendar-check empty-icon"></i>
+      <p>Add your subjects and a deadline on the left, then click <strong>Make Plan</strong>.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const tags = [];
+
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('tagInput');
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      addTag(input.value.trim());
+      input.value = '';
+    }
+    if (e.key === 'Backspace' && !input.value && tags.length) {
+      removeTag(tags.length - 1);
+    }
+  });
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('examDate').min = today;
+});
+
+function addTag(text) {
+  if (tags.includes(text) || tags.length >= 8) return;
+  tags.push(text);
+  renderTags();
+}
+
+function removeTag(idx) {
+  tags.splice(idx, 1);
+  renderTags();
+}
+
+function renderTags() {
+  const container = document.getElementById('tagContainer');
+  const input     = document.getElementById('tagInput');
+  container.querySelectorAll('.tag').forEach(t => t.remove());
+  tags.forEach((tag, i) => {
+    const el = document.createElement('div');
+    el.className = 'tag';
+    el.innerHTML = `${tag} <span class="tag-remove" onclick="removeTag(${i})">✕</span>`;
+    container.insertBefore(el, input);
+  });
+}
+
+async function generatePlan() {
+  if (!tags.length) { showToast('Add at least one subject', 'error'); return; }
+  const examDate   = document.getElementById('examDate').value;
+  if (!examDate)   { showToast('Please select a target date', 'error'); return; }
+  const hoursPerDay = document.getElementById('hoursSlider').value;
+  const btn = document.getElementById('planBtn');
+
+  setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i> Working it out…');
+  document.getElementById('planArea').innerHTML =
+    '<div class="loading-state"><div class="big-spinner"></div><p>Working out your schedule...</p></div>';
+
+  try {
+    const res  = await fetch('/api/planner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subjects: tags, exam_date: examDate, hours_per_day: parseInt(hoursPerDay), grade: getGrade() })
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); return; }
+    renderPlan(data);
+  } catch {
+    showToast('Failed to generate plan. Try again.', 'error');
+  }
+  setLoading(btn, false, '<i class="fas fa-calendar-plus"></i> Make Plan');
+}
+
+function renderPlan(data) {
+  let html = '';
+  data.schedule.forEach(day => {
+    html += `<div class="schedule-day">
+      <div class="day-header"><i class="fas fa-calendar-day"></i> ${day.day} &mdash; ${day.date_label}</div>`;
+    day.sessions.forEach(s => {
+      const pc = 'priority-' + s.priority.toLowerCase();
+      html += `<div class="session-item">
+        <div class="session-subject">${s.subject}</div>
+        <div class="session-topics">${s.topics}</div>
+        <div class="session-meta">
+          <span class="session-duration"><i class="fas fa-clock"></i> ${s.duration}</span>
+          <span class="priority-badge ${pc}">${s.priority}</span>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  if (data.tips && data.tips.length) {
+    html += `<div class="tips-section">
+      <h3 class="section-title"><i class="fas fa-lightbulb"></i> Study Tips</h3>
+      <div class="tips-grid">`;
+    data.tips.forEach(tip => {
+      html += `<div class="tip-card"><i class="fas fa-check-circle"></i><span>${tip}</span></div>`;
+    });
+    html += `</div></div>`;
+  }
+  document.getElementById('planArea').innerHTML = html;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block page_title %}Home{% endblock %}
+{% block page_subtitle %}Pick something and get started.{% endblock %}
+
+{% block content %}
+<div class="welcome-banner">
+  <div class="banner-text">
+    <div class="banner-title">Let's get some studying done 📖</div>
+    <p class="banner-sub">Made this to make studying a bit less painful. Ask questions, make a quick quiz, or plan out your week — whatever helps.</p>
+    <a href="/ask" class="btn btn-white">Ask something &nbsp;<i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="banner-img">📖</div>
+</div>
+
+<h2 class="section-title">What do you need?</h2>
+<div class="feature-grid">
+  <a href="/ask" class="feature-card">
+    <div class="feature-icon icon-blue"><i class="fas fa-comment-dots"></i></div>
+    <div>
+      <h3>Ask a Question</h3>
+      <p>Type anything you're stuck on — a concept, a formula, a problem. It'll try to explain it simply.</p>
+    </div>
+    <div class="card-arrow">Open <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/quiz" class="feature-card">
+    <div class="feature-icon icon-purple"><i class="fas fa-circle-question"></i></div>
+    <div>
+      <h3>Quick Quiz</h3>
+      <p>Type a topic and get MCQs to test yourself. Good for checking if you actually understood something.</p>
+    </div>
+    <div class="card-arrow">Open <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/summarize" class="feature-card">
+    <div class="feature-icon icon-green"><i class="fas fa-file-lines"></i></div>
+    <div>
+      <h3>Summarise Notes</h3>
+      <p>Paste a wall of text from your notes or textbook and get the key points pulled out.</p>
+    </div>
+    <div class="card-arrow">Open <i class="fas fa-arrow-right"></i></div>
+  </a>
+  <a href="/planner" class="feature-card">
+    <div class="feature-icon icon-orange"><i class="fas fa-calendar-check"></i></div>
+    <div>
+      <h3>Study Planner</h3>
+      <p>Add your subjects and a deadline — it'll split the work across days so you're not cramming the night before.</p>
+    </div>
+    <div class="card-arrow">Open <i class="fas fa-arrow-right"></i></div>
+  </a>
+</div>
+
+<h2 class="section-title">Things that actually help</h2>
+<div class="tips-grid">
+  <div class="tip-card"><i class="fas fa-lightbulb"></i><span>Don't cram everything the night before — studying over a few days genuinely sticks better.</span></div>
+  <div class="tip-card"><i class="fas fa-rotate"></i><span>Closing your book and trying to recall what you read is way more useful than re-reading it.</span></div>
+  <div class="tip-card"><i class="fas fa-moon"></i><span>Pulling an all-nighter usually backfires. Sleep is when the brain actually processes stuff.</span></div>
+  <div class="tip-card"><i class="fas fa-timer"></i><span>25 minutes of actual focus beats 2 hours of half-distracted studying. Put the phone away.</span></div>
+</div>
+{% endblock %}

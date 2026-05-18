@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block title %}Quick Quiz{% endblock %}
+{% block page_title %}Quick Quiz{% endblock %}
+{% block page_subtitle %}Test yourself on any topic — see what you actually know vs what you think you know{% endblock %}
+
+{% block content %}
+<div class="two-col-layout">
+
+  <!-- Config Sidebar -->
+  <div class="card form-sidebar">
+    <h3 class="form-header"><i class="fas fa-sliders"></i> Set it up</h3>
+    <div class="form-group">
+      <label>Topic / Subject</label>
+      <input type="text" id="quizTopic" placeholder="e.g. Linked Lists, Photosynthesis, World War 2">
+    </div>
+    <div class="form-group">
+      <label>Number of Questions</label>
+      <select id="numQuestions">
+        <option value="3">3 Questions</option>
+        <option value="5" selected>5 Questions</option>
+        <option value="8">8 Questions</option>
+        <option value="10">10 Questions</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Difficulty Level</label>
+      <select id="difficulty">
+        <option value="Easy">Easy</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+    <button class="btn btn-primary w-full" id="generateBtn" onclick="generateQuiz()">
+      <i class="fas fa-wand-magic-sparkles"></i> Make Quiz
+    </button>
+  </div>
+
+  <!-- Quiz Area -->
+  <div id="quizArea">
+    <div class="empty-state">
+      <i class="fas fa-circle-question empty-icon"></i>
+      <p>Set a topic on the left and hit <strong>Make Quiz</strong>.</p>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let quizData = null;
+let userAnswers = {};
+
+async function generateQuiz() {
+  const topic        = document.getElementById('quizTopic').value.trim();
+  const numQuestions = document.getElementById('numQuestions').value;
+  const difficulty   = document.getElementById('difficulty').value;
+  const btn          = document.getElementById('generateBtn');
+  if (!topic) { showToast('Please enter a topic', 'error'); return; }
+
+  setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i> Hold on…');
+  document.getElementById('quizArea').innerHTML =
+    '<div class="loading-state"><div class="big-spinner"></div><p>Making your quiz, hang on...</p></div>';
+
+  try {
+    const res  = await fetch('/api/quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, num_questions: parseInt(numQuestions), difficulty, grade: getGrade() })
+    });
+    const data = await res.json();
+    if (data.error) { showToast(data.error, 'error'); resetQuizArea(); return; }
+    quizData    = data;
+    userAnswers = {};
+    renderQuiz(data);
+  } catch {
+    showToast('Failed to generate quiz. Try again.', 'error');
+    resetQuizArea();
+  }
+  setLoading(btn, false, '<i class="fas fa-wand-magic-sparkles"></i> Make Quiz');
+}
+
+function resetQuizArea() {
+  document.getElementById('quizArea').innerHTML =
+    '<div class="empty-state"><i class="fas fa-triangle-exclamation empty-icon"></i><p>Something went wrong. Please try again.</p></div>';
+}
+
+function renderQuiz(data) {
+  let html = `<div class="quiz-header">
+    <h2><i class="fas fa-book-open"></i> ${data.topic}</h2>
+    <p>${data.questions.length} questions &nbsp;·&nbsp; ${document.getElementById('difficulty').value}</p>
+  </div>`;
+
+  data.questions.forEach((q, i) => {
+    html += `<div class="quiz-question" id="q-${i}">
+      <div class="q-number">Question ${i + 1} of ${data.questions.length}</div>
+      <div class="q-text">${q.question}</div>
+      <div class="option-list">`;
+    q.options.forEach((opt, j) => {
+      const letter = opt.charAt(0);
+      html += `<div class="option-item" id="opt-${i}-${j}" onclick="selectOption(${i},'${letter}','${q.answer}',${j})">
+        <div class="option-letter">${letter}</div>
+        <div>${opt.substring(3)}</div>
+      </div>`;
+    });
+    html += `</div>
+      <div class="answer-key" id="exp-${i}" style="display:none">
+        <i class="fas fa-circle-check"></i>&nbsp; Correct: <strong>${q.answer}</strong> — ${q.explanation}
+      </div>
+    </div>`;
+  });
+
+  html += `<button class="btn btn-primary w-full" id="submitQuizBtn" onclick="submitQuiz()">
+    <i class="fas fa-check"></i> Submit Quiz
+  </button>`;
+  document.getElementById('quizArea').innerHTML = html;
+}
+
+function selectOption(qIdx, letter, correctAnswer, optIdx) {
+  document.querySelectorAll(`#q-${qIdx} .option-item`).forEach(el => el.classList.remove('selected'));
+  document.getElementById(`opt-${qIdx}-${optIdx}`).classList.add('selected');
+  userAnswers[qIdx] = letter;
+}
+
+function submitQuiz() {
+  if (Object.keys(userAnswers).length < quizData.questions.length) {
+    showToast('Please answer all questions first', 'error'); return;
+  }
+  let score = 0;
+  quizData.questions.forEach((q, i) => {
+    const selected = userAnswers[i];
+    document.querySelectorAll(`#q-${i} .option-item`).forEach(opt => {
+      const letter = opt.querySelector('.option-letter').textContent;
+      if (letter === q.answer) opt.classList.add('correct');
+      if (letter === selected && selected !== q.answer) opt.classList.add('wrong');
+    });
+    document.getElementById(`exp-${i}`).style.display = 'flex';
+    if (selected === q.answer) score++;
+  });
+
+  const pct = Math.round((score / quizData.questions.length) * 100);
+  const emoji = pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '📚';
+  const label = pct >= 80 ? 'Excellent!' : pct >= 60 ? 'Good work!' : 'Keep studying!';
+  const scoreHtml = `<div class="score-card">
+    <div class="score-emoji">${emoji}</div>
+    <div class="score-number">${score}/${quizData.questions.length}</div>
+    <div class="score-label">Score: ${pct}% — ${label}</div>
+  </div>`;
+  document.getElementById('quizArea').insertAdjacentHTML('afterbegin', scoreHtml);
+  document.getElementById('submitQuizBtn').remove();
+  document.querySelectorAll('.option-item').forEach(el => el.style.pointerEvents = 'none');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Ask a Question{% endblock %}
+{% block page_title %}Ask a Question{% endblock %}
+{% block page_subtitle %}Type anything you're confused about — don't worry about phrasing it perfectly{% endblock %}
+
+{% block content %}
+<div class="card chat-card">
+  <div class="chat-history" id="chatHistory">
+    <div class="chat-welcome">
+      <div class="chat-welcome-icon"><i class="fas fa-robot"></i></div>
+      <div>
+        <strong>Go ahead, ask anything.</strong>
+        <p>Doesn't have to be perfectly worded — just type what you're stuck on and I'll try to explain it. Works best with specific questions.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="chat-input-area">
+    <select id="subjectSelect" class="subject-select">
+      <option value="General">General</option>
+      <option value="Mathematics">Mathematics</option>
+      <option value="Physics">Physics</option>
+      <option value="Chemistry">Chemistry</option>
+      <option value="Computer Science">Computer Science</option>
+      <option value="Data Structures">Data Structures</option>
+      <option value="Algorithms">Algorithms</option>
+      <option value="DBMS">DBMS</option>
+      <option value="Operating Systems">Operating Systems</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Signals and Systems">Signals &amp; Systems</option>
+      <option value="English">English</option>
+    </select>
+    <div class="chat-form">
+      <textarea id="questionInput" placeholder="e.g. Why does a pointer in C store an address and not a value?" rows="2"></textarea>
+      <button class="btn btn-primary send-btn" id="askBtn" onclick="askQuestion()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function askQuestion() {
+  const question = document.getElementById('questionInput').value.trim();
+  const subject  = document.getElementById('subjectSelect').value;
+  const btn      = document.getElementById('askBtn');
+  if (!question) return;
+
+  appendMessage('user', question);
+  document.getElementById('questionInput').value = '';
+  setLoading(btn, true, '<i class="fas fa-spinner fa-spin"></i>');
+  const typingEl = appendTyping();
+
+  try {
+    const res  = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, subject, grade: getGrade() })
+    });
+    const data = await res.json();
+    typingEl.remove();
+    appendMessage('ai', data.error ? 'Sorry, something went wrong. Please try again.' : data.answer, !!data.error);
+  } catch {
+    typingEl.remove();
+    appendMessage('ai', 'Network error. Please check your connection.', true);
+  }
+  setLoading(btn, false, '<i class="fas fa-paper-plane"></i>');
+}
+
+function appendMessage(role, text, isError = false) {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  div.className = `chat-msg ${role}`;
+  const icon = role === 'ai' ? 'fa-robot' : 'fa-user';
+  div.innerHTML = `
+    <div class="msg-avatar ${role}"><i class="fas ${icon}"></i></div>
+    <div class="msg-bubble${isError ? ' error' : ''}">${mdToHtml(text)}</div>`;
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+  return div;
+}
+
+function appendTyping() {
+  const history = document.getElementById('chatHistory');
+  const div = document.createElement('div');
+  div.className = 'chat-msg ai';
+  div.innerHTML = `
+    <div class="msg-avatar ai"><i class="fas fa-robot"></i></div>
+    <div class="msg-bubble typing-bubble">
+      <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    </div>`;
+  history.appendChild(div);
+  history.scrollTop = history.scrollHeight;
+  return div;
+}
+
+document.getElementById('questionInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); askQuestion(); }
+});
+</script>
+{% endblock %}

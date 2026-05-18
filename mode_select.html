@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyBuddy – Pick Your Level</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="mode-select-body">
+
+<div class="ms-wrapper">
+  <div class="ms-header">
+    <div class="ms-logo">
+      <i class="fas fa-graduation-cap"></i>
+      <span>Study<span>Buddy</span></span>
+    </div>
+    <p>Pick your grade and let's get to work.</p>
+  </div>
+
+  <div class="ms-cards">
+
+    <!-- Primary -->
+    <div class="ms-card ms-primary" id="card-primary" onclick="toggleGrades('primary')">
+      <div class="ms-card-top">
+        <div class="ms-emoji">🎒</div>
+        <h2>Primary School</h2>
+        <p class="ms-desc">Uses pictures, emojis and short stories to explain things</p>
+        <div class="ms-range">Grades 1 – 5</div>
+      </div>
+      <div class="ms-grades" id="grades-primary">
+        <p class="ms-grade-label">Pick your grade:</p>
+        <div class="ms-grade-btns">
+          <button onclick="go(1,event)">Grade 1</button>
+          <button onclick="go(2,event)">Grade 2</button>
+          <button onclick="go(3,event)">Grade 3</button>
+          <button onclick="go(4,event)">Grade 4</button>
+          <button onclick="go(5,event)">Grade 5</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary -->
+    <div class="ms-card ms-secondary" id="card-secondary" onclick="toggleGrades('secondary')">
+      <div class="ms-card-top">
+        <div class="ms-emoji">📚</div>
+        <h2>Secondary School</h2>
+        <p class="ms-desc">Proper explanations with worked examples and the right terminology</p>
+        <div class="ms-range">Grades 6 – 12</div>
+      </div>
+      <div class="ms-grades" id="grades-secondary">
+        <p class="ms-grade-label">Pick your grade:</p>
+        <div class="ms-grade-btns">
+          <button onclick="go(6,event)">Grade 6</button>
+          <button onclick="go(7,event)">Grade 7</button>
+          <button onclick="go(8,event)">Grade 8</button>
+          <button onclick="go(9,event)">Grade 9</button>
+          <button onclick="go(10,event)">Grade 10</button>
+          <button onclick="go(11,event)">Grade 11</button>
+          <button onclick="go(12,event)">Grade 12</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- College -->
+    <div class="ms-card ms-college" onclick="go('college',event)">
+      <div class="ms-card-top">
+        <div class="ms-emoji">🎓</div>
+        <h2>College</h2>
+        <p class="ms-desc">Goes deeper — good for B.Tech subjects, theory questions and lab prep</p>
+        <div class="ms-range">B.Tech / University</div>
+        <button class="ms-go-btn" onclick="go('college',event)">Get Started <i class="fas fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function toggleGrades(mode) {
+  ['primary','secondary'].forEach(m => {
+    const el = document.getElementById('grades-' + m);
+    const card = document.getElementById('card-' + m);
+    if (m === mode) {
+      const open = el.classList.contains('open');
+      el.classList.toggle('open', !open);
+      card.classList.toggle('active', !open);
+    } else {
+      el.classList.remove('open');
+      card.classList.remove('active');
+    }
+  });
+}
+
+function go(grade, event) {
+  if (event) event.stopPropagation();
+  localStorage.setItem('sb_grade', grade);
+  window.location.href = '/';
+}
+</script>
+</body>
+</html>

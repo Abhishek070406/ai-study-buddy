@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyBuddy – {% block title %}{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <i class="fas fa-graduation-cap"></i>
+        <span>Study<span class="accent">Buddy</span></span>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item {% if request.path == '/' %}active{% endif %}">
+        <i class="fas fa-house"></i><span>Dashboard</span>
+      </a>
+      <a href="/ask" class="nav-item {% if request.path == '/ask' %}active{% endif %}">
+        <i class="fas fa-comment-dots"></i><span>Ask AI</span>
+      </a>
+      <a href="/quiz" class="nav-item {% if request.path == '/quiz' %}active{% endif %}">
+        <i class="fas fa-circle-question"></i><span>Quiz Generator</span>
+      </a>
+      <a href="/summarize" class="nav-item {% if request.path == '/summarize' %}active{% endif %}">
+        <i class="fas fa-file-lines"></i><span>Summarizer</span>
+      </a>
+      <a href="/planner" class="nav-item {% if request.path == '/planner' %}active{% endif %}">
+        <i class="fas fa-calendar-check"></i><span>Study Planner</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="/mode-select" class="mode-switch-btn">
+        <span id="modeEmoji">🎓</span>
+        <span id="gradeChip" class="grade-chip">College</span>
+        <i class="fas fa-pen-to-square" style="margin-left:auto;font-size:.65rem"></i>
+      </a>
+      <div class="user-card">
+        <div class="user-avatar">S</div>
+        <div>
+          <div class="user-name">Student</div>
+          <div class="user-role">StudyBuddy AI</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+        <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+      </div>
+      {% block header_actions %}{% endblock %}
+    </div>
+    <div class="content-area">
+      {% block content %}{% endblock %}
+    </div>
+    <div class="page-footer">B.Tech Sem 4 Project &nbsp;·&nbsp;</div>
+  </main>
+
+</div>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
